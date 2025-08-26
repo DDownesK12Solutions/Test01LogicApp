@@ -1,0 +1,13 @@
+# Logic Apps (Standard) / Functions bits
+bin/
+obj/
+.local/
+.vscode/
+**/.python_packages/
+**/__pycache__/
+local.settings.json
+connections.local.json
+.env
+# OS cruft
+.DS_Store
+Thumbs.db
