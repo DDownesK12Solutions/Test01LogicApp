@@ -1,55 +1,52 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy dotnet core app to Azure Function App - test01pips
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '8.0.x' # set this to the dotnet version to use
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'          # folder that has host.json, workflows/, connections.json
+  DOTNET_VERSION: '8.0.x'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
-      - name: 'Checkout GitHub Action'
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
-        uses: actions/setup-dotnet@v1
+      # (Optional) You can remove setup-dotnet entirely for pure Logic Apps, but leaving it is harmless
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 'Resolve Project Dependencies Using Dotnet'
-        shell: pwsh
+      # Package the Logic App (no dotnet build)
+      - name: Create deployment package
+        shell: bash
         run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          dotnet build --configuration Release --output ./output
-          popd
-      
-      - name: Login to Azure
+          cd "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+          mkdir -p out
+          # include the standard Logic Apps Standard artifacts
+          zip -r ../package.zip host.json connections.json workflows/ 2>/dev/null || true
+          # include local.settings.json only if you really need it (usually NO for cloud deployment)
+          cd -
+
+      - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_FC844E6562CE4183B4A3B32B5BB5A661 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DE7FB96AC4774AFFB3403FD7A2BD83FC }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3939B82B4984448786680AC252A1676E }}
 
-      - name: 'Run Azure Functions Action'
+      - name: Deploy to Azure Functions (Logic Apps Standard)
         uses: Azure/functions-action@v1
-        id: fa
         with:
-          app-name: 'test01pips'
-          slot-name: 'Production'
-          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
-
-          
-
+          app-name: test01pips
+          slot-name: Production
+          package: package.zip
