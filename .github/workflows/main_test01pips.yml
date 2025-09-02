@@ -26,41 +26,41 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Create deployment package (Logic Apps Standard shape)
-      shell: bash
-      run: |
-        set -euo pipefail
-        APP_PATH="${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
-    
-        # Must have host.json / connections.json
-        test -f "$APP_PATH/host.json" || { echo "host.json not found in $APP_PATH"; exit 1; }
-        test -f "$APP_PATH/connections.json" || { echo "connections.json not found in $APP_PATH"; exit 1; }
-    
-        # Find all workflow folders (directory that contains workflow.json)
-        mapfile -t WF_DIRS < <(find "$APP_PATH" -type f -name workflow.json -printf '%h\n')
-    
-        if [ "${#WF_DIRS[@]}" -eq 0 ]; then
-          echo "No workflow.json files found under $APP_PATH"
-          exit 1
-        fi
-    
-        echo "Discovered workflow folders:"
-        printf ' - %s\n' "${WF_DIRS[@]}"
-    
-        # Stage into package/ root: host.json, connections.json, and each <WorkflowName>/...
-        rm -rf package package.zip
-        mkdir -p package
-        cp "$APP_PATH/host.json" package/
-        cp "$APP_PATH/connections.json" package/
-    
-        for dir in "${WF_DIRS[@]}"; do
-          name="$(basename "$dir")"               # <WorkflowName>
-          mkdir -p "package/$name"
-          rsync -a "$dir/" "package/$name/"       # brings workflow.json and any child files
-        done
-    
-        # Create deployable zip (exclude build junk just in case)
-        ( cd package && zip -r ../package.zip . -x "*/bin/*" "*/obj/*" "*/.git/*" )
+      - name: Create deployment package (Logic Apps Standard shape)
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+      
+          # Must have host.json / connections.json
+          test -f "$APP_PATH/host.json" || { echo "host.json not found in $APP_PATH"; exit 1; }
+          test -f "$APP_PATH/connections.json" || { echo "connections.json not found in $APP_PATH"; exit 1; }
+      
+          # Find all workflow folders (directory that contains workflow.json)
+          mapfile -t WF_DIRS < <(find "$APP_PATH" -type f -name workflow.json -printf '%h\n')
+      
+          if [ "${#WF_DIRS[@]}" -eq 0 ]; then
+            echo "No workflow.json files found under $APP_PATH"
+            exit 1
+          fi
+      
+          echo "Discovered workflow folders:"
+          printf ' - %s\n' "${WF_DIRS[@]}"
+      
+          # Stage into package/ root: host.json, connections.json, and each <WorkflowName>/...
+          rm -rf package package.zip
+          mkdir -p package
+          cp "$APP_PATH/host.json" package/
+          cp "$APP_PATH/connections.json" package/
+      
+          for dir in "${WF_DIRS[@]}"; do
+            name="$(basename "$dir")"               # <WorkflowName>
+            mkdir -p "package/$name"
+            rsync -a "$dir/" "package/$name/"       # brings workflow.json and any child files
+          done
+      
+          # Create deployable zip (exclude build junk just in case)
+          ( cd package && zip -r ../package.zip . -x "*/bin/*" "*/obj/*" "*/.git/*" )
 
       - name: Azure login (OIDC)
         uses: azure/login@v2
@@ -75,6 +75,7 @@ jobs:
           app-name: test01pips
           slot-name: Production
           package: package.zip
+
 
 
 
