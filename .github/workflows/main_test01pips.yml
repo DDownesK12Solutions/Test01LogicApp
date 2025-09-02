@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-and-deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
@@ -75,5 +75,6 @@ jobs:
           app-name: test01pips
           slot-name: Production
           package: package.zip
+
 
 
