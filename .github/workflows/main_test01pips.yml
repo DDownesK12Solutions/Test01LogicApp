@@ -19,7 +19,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_FC844E6562CE4183B4A3B32B5BB5A661 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DE7FB96AC4774AFFB3403FD7A2BD83FC }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3939B82B4984448786680AC252A1676E }}
+          
       - name: Configure Logic App app settings
         uses: azure/cli@v2
         with:
@@ -71,19 +78,13 @@ jobs:
           # Create deployable zip (exclude build junk just in case)
           ( cd package && zip -r ../package.zip . -x "*/bin/*" "*/obj/*" "*/.git/*" )
 
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_FC844E6562CE4183B4A3B32B5BB5A661 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DE7FB96AC4774AFFB3403FD7A2BD83FC }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3939B82B4984448786680AC252A1676E }}
-
       - name: Deploy to Azure Functions (Logic Apps Standard)
         uses: Azure/functions-action@v1
         with:
           app-name: test01pips
           slot-name: Production
           package: package.zip
+
 
 
 
