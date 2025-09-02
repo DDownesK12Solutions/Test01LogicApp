@@ -19,12 +19,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      # (Optional) You can remove setup-dotnet entirely for pure Logic Apps, but leaving it is harmless
-      - name: Setup .NET ${{ env.DOTNET_VERSION }}
-        uses: actions/setup-dotnet@v4
+        
+      - name: Configure Logic App app settings
+        uses: azure/cli@v2
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          inlineScript: |
+            az functionapp config appsettings set \
+              -g "v-central" \
+              -n "test01pips" \
+              --settings \
+                WORKFLOWS_SUBSCRIPTION_ID="${{ secrets.WORKFLOWS_SUBSCRIPTION_ID }}" \
+                WORKFLOWS_TENANT_ID="${{ secrets.WORKFLOWS_TENANT_ID }}" \
+                WORKFLOWS_RESOURCE_GROUP_NAME="v-central" \
+                WORKFLOWS_LOCATION_NAME="australiaeast" \
+                azuretables-ConnectionRuntimeUrl="${{ secrets.AZURETABLES_RUNTIME_URL }}" \
+                azuretables-connectionKey="${{ secrets.AZURETABLES_KEY }}"
 
       - name: Create deployment package (Logic Apps Standard shape)
         shell: bash
@@ -75,6 +84,7 @@ jobs:
           app-name: test01pips
           slot-name: Production
           package: package.zip
+
 
 
 
