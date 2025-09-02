@@ -1,0 +1,14 @@
+{
+  "azuretables-ConnectionRuntimeUrl": {
+    "type": "String",
+    "value": "@appsetting('azuretables-ConnectionRuntimeUrl')"
+  },
+  "azuretables-Authentication": {
+    "type": "Object",
+    "value": {
+      "type": "Raw",
+      "scheme": "Key",
+      "parameter": "@appsetting('azuretables-connectionKey')"
+    }
+  }
+}
