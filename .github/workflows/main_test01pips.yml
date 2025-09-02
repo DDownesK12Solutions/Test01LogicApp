@@ -26,15 +26,23 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      # Package the Logic App (no dotnet build)
       - name: Create deployment package
         shell: bash
         run: |
-          cd "${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
-          mkdir -p out
-          # include the standard Logic Apps Standard artifacts
-          zip -r ../package.zip host.json connections.json workflows/ 2>/dev/null || true
-          # include local.settings.json only if you really need it (usually NO for cloud deployment)
+          set -euo pipefail
+          APP_PATH="${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}"
+      
+          # Sanity checks
+          test -f "$APP_PATH/host.json" || { echo "host.json not found in $APP_PATH"; exit 1; }
+          test -f "$APP_PATH/connections.json" || { echo "connections.json not found in $APP_PATH"; exit 1; }
+          test -d "$APP_PATH/workflows" || { echo "workflows/ folder not found in $APP_PATH"; exit 1; }
+      
+          echo "Workflows found:"
+          find "$APP_PATH/workflows" -maxdepth 2 -name workflow.json -print
+      
+          # Build the deployable zip (do NOT include local.settings.json)
+          cd "$APP_PATH"
+          zip -r ../package.zip host.json connections.json workflows/ -x "*/bin/*" "*/obj/*"
           cd -
 
       - name: Azure login (OIDC)
@@ -50,3 +58,4 @@ jobs:
           app-name: test01pips
           slot-name: Production
           package: package.zip
+
